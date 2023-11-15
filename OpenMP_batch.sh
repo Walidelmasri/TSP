@@ -56,7 +56,7 @@ if test -x $EXE; then
       echo
 
       # run multiple times. Because we have exported how many threads we're using, we just execute the file.
-      ./${EXE}; done     
+      for i in {1..5}; do ./${EXE}; done     
 else
      echo $SRC did not built to $EXE
 fi
