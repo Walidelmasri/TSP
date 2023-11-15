@@ -3,11 +3,11 @@
 #include<math.h>
 #include<string.h>
 #include<stdbool.h>
-// #include "coordReader.c"
+#include "coordReader.c"
 
-int readNumOfCoords(char *fileName);
-double **readCoords(char *filename, int numOfCoords);
-void *writeTourToFile(int *tour, int tourLength, char *filename);
+// int readNumOfCoords(char *fileName);
+// double **readCoords(char *filename, int numOfCoords);
+// void *writeTourToFile(int *tour, int tourLength, char *filename);
 int find_index(int arr[], int size, int element) {
     for (int i = 0; i < size; i++) {
         if (arr[i] == element) {
@@ -20,8 +20,13 @@ int find_index(int arr[], int size, int element) {
 int main(int argc, char *argv[]){
 
     int numOfCoords;
-    char *filename = argv[1];
-    char *outputFile = argv[2];
+    // char *filename = argv[1];
+    // char *outputFile = argv[2];
+
+    char *filename;
+    filename = "4096_coords.coord";
+    char *outputFile;
+    outputFile = "testC4096";
 
 	//Read number of coords in file
     numOfCoords = readNumOfCoords(filename);
@@ -107,9 +112,9 @@ int main(int argc, char *argv[]){
             }
 
         }
-        printf("Minimal Position to visit is position %d with position %d before and position %d after\n", minimalPosition, indexA, indexB);
-        printf("Minimal Cost from %d to %d to %d\n", tour[indexA], minimalPosition, tour[indexB]);
-        printf("Store position to tour\n");
+        // printf("Minimal Position to visit is position %d with position %d before and position %d after\n", minimalPosition, indexA, indexB);
+        // printf("Minimal Cost from %d to %d to %d\n", tour[indexA], minimalPosition, tour[indexB]);
+        // printf("Store position to tour\n");
         if(visitNumber == 0){
             tour[visitNumber + 1] = minimalPosition;
         }
@@ -123,15 +128,15 @@ int main(int argc, char *argv[]){
         }
 
         toVisit[minimalPosition] = 0;
-	    printf("Visiting Order: ");
-	    for(int i = 0; i < numOfCoords + 1; i++){
-		    printf("%d ", tour[i]);
-	    }
+	    // printf("Visiting Order: ");
+	    // for(int i = 0; i < numOfCoords + 1; i++){
+		//     printf("%d ", tour[i]);
+	    // }
     }
-	printf("Visiting Order: ");
-	for(int i = 0; i < numOfCoords + 1; i++){
-		printf("%d ", tour[i]);
-	}
+	// printf("Visiting Order: ");
+	// for(int i = 0; i < numOfCoords + 1; i++){
+	// 	printf("%d ", tour[i]);
+	// }
     printf("\n");
     writeTourToFile(tour, numOfCoords + 1, outputFile);
     return 0;
