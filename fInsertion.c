@@ -3,10 +3,12 @@
 #include<math.h>
 #include<string.h>
 #include<stdbool.h>
-#include "coordReader.c"
+// #include "coordReader.c"
 
-// int readNumOfCoords(char *fileName);
-// double **readCoords(char *filename, int numOfCoords);
+int readNumOfCoords(char *fileName);
+double **readCoords(char *filename, int numOfCoords);
+void *writeTourToFile(int *tour, int tourLength, char *filename);
+
 int find_index(int arr[], int size, int element) {
     for (int i = 0; i < size; i++) {
         if (arr[i] == element) {
@@ -16,13 +18,16 @@ int find_index(int arr[], int size, int element) {
     return -1; // element not found
 }
 
-int main(int argc, char **argv){
+int main(int argc, char *argv[]){
 
     int numOfCoords;
-    char *filename;
-    filename = "4096_coords.coord";
-    char *outputFile;
-    outputFile = "testF4096";
+    char *filename = argv[1];
+    char *outputFile = argv[2];
+    // int numOfCoords;
+    // char *filename;
+    // filename = "4096_coords.coord";
+    // char *outputFile;
+    // outputFile = "testF4096";
 
 	//Read number of coords in file
     numOfCoords = readNumOfCoords(filename);
@@ -59,7 +64,7 @@ int main(int argc, char **argv){
 
 	double **coords = (double **)malloc(numOfCoords * sizeof(double *));
 	for(int i = 0; i < numOfCoords; i++){
-		coords[i] = (int *)malloc(numOfCoords * sizeof(double));
+		coords[i] = (double *)malloc(numOfCoords * sizeof(double));
 	}
 	for(int i = 0; i < numOfCoords + 1; i++){
 		tour[i] = 0;

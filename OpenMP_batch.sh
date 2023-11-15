@@ -39,7 +39,7 @@ rm -f ${EXE}
 echo compiling $SRC to $EXE 
 
 #compilation using tel compiler of sourcecode to exectuable.
-gcc -g -fopenmp -std=c99 cInsertion.c coordReader.c -o ci.exe -lm
+gcc -g -fopenmp -std=c99 cInsertion.c coordReader.c -o cInsertion.exe -lm
 echo
 echo ------------------------------------
 
@@ -56,7 +56,7 @@ if test -x $EXE; then
       echo
 
       # run multiple times. Because we have exported how many threads we're using, we just execute the file.
-      for i in {1..5}; do ./${EXE}; done     
+      ./${EXE}; done     
 else
      echo $SRC did not built to $EXE
 fi

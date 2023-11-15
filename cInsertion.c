@@ -3,11 +3,11 @@
 #include<math.h>
 #include<string.h>
 #include<stdbool.h>
-#include "coordReader.c"
+// #include "coordReader.c"
 
-// int readNumOfCoords(char *fileName);
-// double **readCoords(char *filename, int numOfCoords);
-// void *writeTourToFile(int *tour, int tourLength, char *filename);
+int readNumOfCoords(char *fileName);
+double **readCoords(char *filename, int numOfCoords);
+void *writeTourToFile(int *tour, int tourLength, char *filename);
 int find_index(int arr[], int size, int element) {
     for (int i = 0; i < size; i++) {
         if (arr[i] == element) {
@@ -20,13 +20,13 @@ int find_index(int arr[], int size, int element) {
 int main(int argc, char *argv[]){
 
     int numOfCoords;
-    // char *filename = argv[1];
-    // char *outputFile = argv[2];
+    char *filename = argv[1];
+    char *outputFile = argv[2];
 
-    char *filename;
-    filename = "4096_coords.coord";
-    char *outputFile;
-    outputFile = "testC4096";
+    // char *filename;
+    // filename = "4096_coords.coord";
+    // char *outputFile;
+    // outputFile = "testC4096";
 
 	//Read number of coords in file
     numOfCoords = readNumOfCoords(filename);
@@ -98,9 +98,9 @@ int main(int argc, char *argv[]){
         for(int nextCheck = 0; nextCheck < numOfCoords; nextCheck++){
             nextPosition = toVisit[nextCheck];
             if(nextPosition != 0){
-                printf("Position %d Minimal Costs\n", nextPosition);
+                // printf("Position %d Minimal Costs\n", nextPosition);
                 for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
-                    printf("Minimal Cost from %d to %d to %d\n", tour[positionBefore], nextPosition, tour[positionBefore + 1]);
+                    // printf("Minimal Cost from %d to %d to %d\n", tour[positionBefore], nextPosition, tour[positionBefore + 1]);
                     minimalCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
                     if(minimalCost < min){
                         minimalPosition = nextPosition;

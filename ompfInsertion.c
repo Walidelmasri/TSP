@@ -3,10 +3,12 @@
 #include<math.h>
 #include<string.h>
 #include<stdbool.h>
-#include "coordReader.c"
+// #include "coordReader.c"
+#include<omp.h>
 
-// int readNumOfCoords(char *fileName);
-// double **readCoords(char *filename, int numOfCoords);
+int readNumOfCoords(char *fileName);
+double **readCoords(char *filename, int numOfCoords);
+void *writeTourToFile(int *tour, int tourLength, char *filename);
 int find_index(int arr[], int size, int element) {
     for (int i = 0; i < size; i++) {
         if (arr[i] == element) {
@@ -16,13 +18,11 @@ int find_index(int arr[], int size, int element) {
     return -1; // element not found
 }
 
-int main(int argc, char **argv){
+int main(int argc, char *argv[]){
 
     int numOfCoords;
-    char *filename;
-    filename = "4096_coords.coord";
-    char *outputFile;
-    outputFile = "testF4096";
+    char *filename = argv[1];
+    char *outputFile = argv[2];
 
 	//Read number of coords in file
     numOfCoords = readNumOfCoords(filename);
@@ -59,7 +59,7 @@ int main(int argc, char **argv){
 
 	double **coords = (double **)malloc(numOfCoords * sizeof(double *));
 	for(int i = 0; i < numOfCoords; i++){
-		coords[i] = (int *)malloc(numOfCoords * sizeof(double));
+		coords[i] = (double *)malloc(numOfCoords * sizeof(double));
 	}
 	for(int i = 0; i < numOfCoords + 1; i++){
 		tour[i] = 0;
@@ -73,32 +73,36 @@ int main(int argc, char **argv){
 	coords = readCoords(filename, numOfCoords);
 
 	//Calculate the distance matrix
+    #pragma omp parallel for
 	for(int xx = 0; xx < numOfCoords; xx++){
 		for (int yy = 0; yy < numOfCoords; yy++){
 			distM[xx][yy] = sqrt(pow(coords[yy][0] - coords[xx][0], 2) + pow(coords[yy][1] - coords[xx][1], 2));
 		}
 	}
 	//Uncomment to print the distance matrix
-	// printf("Distance Matrix\n");
-	// for(int x = 0; x < numOfCoords; x++){
-	// 	for(int y = 0; y < numOfCoords; y++){
-	// 		printf("%f    ", distM[x][y]);
-	// 	}
-	// 	printf("\n");
-	// }
+	printf("Distance Matrix\n");
+	for(int x = 0; x < numOfCoords; x++){
+		for(int y = 0; y < numOfCoords; y++){
+			printf("%f    ", distM[x][y]);
+		}
+		printf("\n");
+	}
     for(int counter = 0; counter < numOfCoords; counter++){
 		toVisit[counter] = counter;
 	}
 
+#pragma omp parallel for
     for(int visitNumber = 0; visitNumber < numOfCoords - 1; visitNumber++){
         max = 0;
         printf("Here's Visit %d\n", visitNumber);
         for(int nextCheck = 0; nextCheck < numOfCoords; nextCheck++){
             nextPosition = toVisit[nextCheck];
             if(nextPosition != 0){
-                // printf("Position %d Maximum Costs\n", nextPosition);
+                printf("Position %d Maximum Costs\n", nextPosition);
                 for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
-                    // printf("maximal Cost from %d to %d is %f\n", tour[positionBefore], nextPosition, distM[tour[positionBefore]][nextPosition]);
+                    #pragma omp critical
+                    {
+                    printf("maximal Cost from %d to %d is %f\n", tour[positionBefore], nextPosition, distM[tour[positionBefore]][nextPosition]);
                     value = distM[tour[positionBefore]][nextPosition];
                     // maxCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
                     if(value > max){
@@ -107,24 +111,27 @@ int main(int argc, char **argv){
                         // indexA = find_index(tour, visitNumber + 2, tour[positionBefore]);
                         // indexB = find_index(tour, visitNumber + 2, tour[positionBefore + 1]);
                     }
+                    }
             }
             }
 
         }
-        // printf("maximal Position to visit is position %d \n", maxPosition);
+        printf("maximal Position to visit is position %d \n", maxPosition);
         maximumTour = 1000000;
         for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
             maxCost = distM[tour[positionBefore]][maxPosition] + distM[maxPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
-            // printf("%d ==> %d == %d Cost %f\n", tour[positionBefore], maxPosition, tour[positionBefore + 1], maxCost);
+            printf("%d ==> %d == %d Cost %f\n", tour[positionBefore], maxPosition, tour[positionBefore + 1], maxCost);
             if(maxCost < maximumTour){
-                // printf("%d\n", tour[positionBefore]);
+                printf("%d\n", tour[positionBefore]);
                 maximumTour = maxCost;
                 indexA = find_index(tour, visitNumber + 2, tour[positionBefore]);
                 indexB = find_index(tour, visitNumber + 2, tour[positionBefore + 1]);
             }
         }
-        // printf("maximal Cost from %d to %d to %d\n", tour[indexA], maxPosition, tour[indexB]);
-        // printf("Store position to tour\n");
+        printf("maximal Cost from %d to %d to %d\n", tour[indexA], maxPosition, tour[indexB]);
+        printf("Store position to tour\n");
+        #pragma omp critical
+        {
         if(visitNumber == 0){
             tour[visitNumber + 1] = maxPosition;
         }
@@ -136,16 +143,19 @@ int main(int argc, char **argv){
             }
         tour[indexA + 1] = maxPosition;
         }
-
+        }
+        #pragma omp critical
+        {
         toVisit[maxPosition] = 0;
+        }
 	    // printf("Visiting Order: ");
 	    // for(int i = 0; i < numOfCoords + 1; i++){
-		//     printf("%d ", tour[i]);
+		    // printf("%d ", tour[i]);
 	    // }
     }
 	// printf("Visiting Order: ");
 	// for(int i = 0; i < numOfCoords + 1; i++){
-	// 	printf("%d ", tour[i]);
+		// printf("%d ", tour[i]);
 	// }
     printf("\n");
     writeTourToFile(tour, numOfCoords + 1, outputFile);
