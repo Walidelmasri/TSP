@@ -53,7 +53,7 @@ int main(int argc, char *argv[]){
     int lastPosition = 0;
     int indexA;
     int indexB;
-
+	
 
 // Init variables
 	int *toVisit = (int *)malloc(numOfCoords * sizeof(int));
@@ -94,8 +94,6 @@ int main(int argc, char *argv[]){
 // #pragma omp parallel for private(min, tour) shared(toVisit)
 #pragma omp parallel for 
     for(int visitNumber = 0; visitNumber < numOfCoords - 1; visitNumber++){
-		#pragma omp critical
-		{
         min = 1000000;
         printf("Here's Visit %d\n", visitNumber);
         for(int nextCheck = 0; nextCheck < numOfCoords; nextCheck++){
@@ -132,15 +130,13 @@ int main(int argc, char *argv[]){
         tour[indexA + 1] = minimalPosition;
 		}
         }
-		#pragma omp critical
-		{
         toVisit[minimalPosition] = 0;
-		}
+		
 	    // printf("Visiting Order: ");
 	    // for(int i = 0; i < numOfCoords + 1; i++){
 		    // printf("%d ", tour[i]);
 	    // }
-    }
+    
 
 	// printf("Visiting Order: ");
 	// for(int i = 0; i < numOfCoords + 1; i++){
