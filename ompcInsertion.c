@@ -20,7 +20,9 @@ int find_index(int arr[], int size, int element) {
 
 int main(int argc, char *argv[]){
 
-    // int numOfCoords;
+    int numOfCoords;
+	int threadCount = omp_get_max_threads();
+	int threadID = omp_get_thread_num();
     // char *filename = argv[1];
     // char *outputFile = argv[2];
     char *filename;
@@ -79,9 +81,6 @@ int main(int argc, char *argv[]){
 
     // Get coords and store in array
 	coords = readCoords(filename, numOfCoords);
-
-	int threadCount = omp_get_max_threads();
-	int threadID = omp_get_thread_num();
 
 	//Calculate the distance matrix
 	#pragma omp parallel for

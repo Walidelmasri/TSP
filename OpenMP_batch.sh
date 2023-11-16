@@ -11,7 +11,6 @@
 
 # load modules intel compiler
 module load compilers/intel/2019u5 
-module load gnu
 
 ## SLURM terms
 ## nodes            relates to number of nodes
@@ -39,7 +38,7 @@ rm -f ${EXE}
 echo compiling $SRC to $EXE 
 
 #compilation using tel compiler of sourcecode to exectuable.
-gcc -g -fopenmp -std=c99 cInsertion.c coordReader.c -o cInsertion.exe -lm
+gcc -g -fopenmp -std=c99 ompcInsertion.c coordReader.c -o ompcInsertion.exe -lm
 echo
 echo ------------------------------------
 
@@ -56,7 +55,7 @@ if test -x $EXE; then
       echo
 
       # run multiple times. Because we have exported how many threads we're using, we just execute the file.
-      ./${EXE}; done     
+      ./${EXE};   
 else
      echo $SRC did not built to $EXE
 fi
