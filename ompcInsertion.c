@@ -51,12 +51,19 @@ int main(int argc, char *argv[]){
     double left;
     double right;
     int lastPosition = 0;
-    int indexA;
-    int indexB;
-	
+    // int indexA;
+    // int indexB;
+
 
 // Init variables
 	int *toVisit = (int *)malloc(numOfCoords * sizeof(int));
+	double *minimum = (double *)malloc(threadID * sizeof(double));
+	double *minimumPosition = (double *)malloc(threadID * sizeof(double));
+	int *nextDest = (int *)malloc(threadID * sizeof(int));
+	int *indexB = (int *)malloc(threadID * sizeof(int));
+	int *indexA = (int *)malloc(threadID * sizeof(int));
+
+	double *minimumCost = (double *)malloc(threadID * sizeof(double));
 
 	double **coords = (double **)malloc(numOfCoords * sizeof(double *));
 	for(int i = 0; i < numOfCoords; i++){
@@ -72,6 +79,9 @@ int main(int argc, char *argv[]){
 
     // Get coords and store in array
 	coords = readCoords(filename, numOfCoords);
+
+	int threadCount = omp_get_max_threads();
+	int threadID = omp_get_thread_num();
 
 	//Calculate the distance matrix
 	#pragma omp parallel for
@@ -94,22 +104,29 @@ int main(int argc, char *argv[]){
 // #pragma omp parallel for private(min, tour) shared(toVisit)
 #pragma omp parallel for 
     for(int visitNumber = 0; visitNumber < numOfCoords - 1; visitNumber++){
-        min = 1000000;
+		minimum[threadID] = 1000000;
+        // min = 1000000;
         printf("Here's Visit %d\n", visitNumber);
         for(int nextCheck = 0; nextCheck < numOfCoords; nextCheck++){
-            nextPosition = toVisit[nextCheck];
-            if(nextPosition != 0){
+			nextDest[threadID] = toVisit[nextCheck];
+            // nextPosition = toVisit[nextCheck];
+            // if(nextPosition != 0){
+			if(nextDest[threadID] != 0){
                 // printf("Position %d Minimal Costs\n", nextPosition);
                 for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
-
                     // printf("Minimal Cost from %d to %d to %d\n", tour[positionBefore], nextPosition, tour[positionBefore + 1]);
-                    minimalCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
+                    minimumCost[threadID] = distM[tour[positionBefore]][nextDest[threadID]] + distM[nextDest[threadID]][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
+					#pragma omp single
+					{
                     if(minimalCost < min){
-                        minimalPosition = nextPosition;
+                        // minimalPosition = nextPosition;
+						minimumPosition[threadID] = nextDest[threadID];
                         min = minimalCost;
-                        indexA = find_index(tour, visitNumber + 2, tour[positionBefore]);
-                        indexB = find_index(tour, visitNumber + 2, tour[positionBefore + 1]);
+						minimum[threadID] = minimumCost[threadID];
+                        indexA[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore]);
+                        indexB[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore + 1]);
                     }
+					}
 				}
             }
             }
@@ -119,18 +136,18 @@ int main(int argc, char *argv[]){
         // printf("Store position to tour\n");
 
         if(visitNumber == 0){
-            tour[visitNumber + 1] = minimalPosition;
+            tour[visitNumber + 1] = minimumPosition[threadID];
         }
         else{
-            if(indexB == 0){indexB = visitNumber + 2;}
+            if(indexB[threadID] == 0){indexB[threadID] = visitNumber + 2;}
             for(int i = visitNumber; i >= indexB; i--){
                 int temp = tour[i];
                 tour[i + 1] = temp;
             }
-        tour[indexA + 1] = minimalPosition;
+        tour[indexA[threadID] + 1] = minimumPosition[threadID];
 		}
         }
-        toVisit[minimalPosition] = 0;
+        toVisit[minimumPosition[threadID]] = 0;
 		
 	    // printf("Visiting Order: ");
 	    // for(int i = 0; i < numOfCoords + 1; i++){
