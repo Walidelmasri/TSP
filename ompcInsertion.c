@@ -20,10 +20,13 @@ int find_index(int arr[], int size, int element) {
 
 int main(int argc, char *argv[]){
 
-    int numOfCoords;
-    char *filename = argv[1];
-    char *outputFile = argv[2];
-
+    // int numOfCoords;
+    // char *filename = argv[1];
+    // char *outputFile = argv[2];
+    char *filename;
+    filename = "9_coords.coord";
+    char *outputFile;
+    outputFile = "testC4096";
 	//Read number of coords in file
     numOfCoords = readNumOfCoords(filename);
     printf("Number of Coordinates: %d\n", numOfCoords);
@@ -91,6 +94,8 @@ int main(int argc, char *argv[]){
 // #pragma omp parallel for private(min, tour) shared(toVisit)
 #pragma omp parallel for 
     for(int visitNumber = 0; visitNumber < numOfCoords - 1; visitNumber++){
+		#pragma omp critical
+		{
         min = 1000000;
         printf("Here's Visit %d\n", visitNumber);
         for(int nextCheck = 0; nextCheck < numOfCoords; nextCheck++){
@@ -98,8 +103,7 @@ int main(int argc, char *argv[]){
             if(nextPosition != 0){
                 // printf("Position %d Minimal Costs\n", nextPosition);
                 for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
-					#pragma omp critical
-					{
+
                     // printf("Minimal Cost from %d to %d to %d\n", tour[positionBefore], nextPosition, tour[positionBefore + 1]);
                     minimalCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
                     if(minimalCost < min){
@@ -111,13 +115,11 @@ int main(int argc, char *argv[]){
 				}
             }
             }
-
-        }
+        
         // printf("Minimal Position to visit is position %d with position %d before and position %d after\n", minimalPosition, indexA, indexB);
         // printf("Minimal Cost from %d to %d to %d\n", tour[indexA], minimalPosition, tour[indexB]);
         // printf("Store position to tour\n");
-		#pragma omp critical
-		{
+
         if(visitNumber == 0){
             tour[visitNumber + 1] = minimalPosition;
         }
