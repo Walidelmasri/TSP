@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
     int currentIndex;
 	//Array to keep track of the available options
     int position = 0;
-	double minimalCost;
+	// double minimalCost;
 	double min = 0;
 	double totalCost = 0;
 	double singleCost = 0;
@@ -62,6 +62,7 @@ int main(int argc, char *argv[]){
 	int *toVisit = (int *)malloc(numOfCoords * sizeof(int));
 	double *minimum = (double *)malloc(numThreads * sizeof(double));
 	double *minimumPosition = (double *)malloc(numThreads * sizeof(double));
+	// double *minimalCost = (double *)malloc(numThreads * sizeof(double));
 	int *indexA = (int *)malloc(numThreads * sizeof(int));
 	int *indexB = (int *)malloc(numThreads * sizeof(int));
 
@@ -99,28 +100,29 @@ int main(int argc, char *argv[]){
 		toVisit[counter] = counter;
 	}
 
-	#pragma omp for private (tour)
+	// #pragma omp for private (tour)
+	#pragma omp parallel for
     for(int visitNumber = 0; visitNumber < numOfCoords - 1; visitNumber++){
         // min = 1000000;
 		int threadID = omp_get_thread_num();
-		minimum[threadID] = 1000000;
+		minimum[threadID] = __DBL_MAX__;
         printf("Here's Visit %d\n", visitNumber);
         for(int nextCheck = 0; nextCheck < numOfCoords; nextCheck++){
             nextPosition = toVisit[nextCheck];
             if(nextPosition != 0){
                 // printf("Position %d Minimal Costs\n", nextPosition);
                 for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
-					#pragma omp critical
-					{
+					// #pragma omp critical
+					// {
                     // printf("Minimal Cost from %d to %d to %d\n", tour[positionBefore], nextPosition, tour[positionBefore + 1]);
-                    minimalCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
+                    double minimalCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
                     if(minimalCost < minimum[threadID]){
                         minimumPosition[threadID] = nextPosition;
                         minimum[threadID] = minimalCost;
                         indexA[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore]);
                         indexB[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore + 1]);
                     }
-					}
+					// }
             }
             }
 
@@ -128,7 +130,7 @@ int main(int argc, char *argv[]){
         // printf("Minimal Position to visit is position %d with position %d before and position %d after\n", minimalPosition, indexA, indexB);
         // printf("Minimal Cost from %d to %d to %d\n", tour[indexA], minimalPosition, tour[indexB]);
         // printf("Store position to tour\n");
-		#pragma omp parallel
+		#pragma omp single
 		{
         if(visitNumber == 0){
             tour[visitNumber + 1] = minimumPosition[threadID];
@@ -141,8 +143,8 @@ int main(int argc, char *argv[]){
             }
         tour[indexA[threadID] + 1] = minimalPosition;
         }
-
-        toVisit[minimumPosition[threadID]] = 0;
+		int temp = minimumPosition[threadID];
+        toVisit[temp] = 0;
 	    printf("Visiting Order: ");
 	    for(int i = 0; i < numOfCoords + 1; i++){
 		    printf("%d ", tour[i]);
