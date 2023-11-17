@@ -99,7 +99,7 @@ int main(int argc, char *argv[]){
 		toVisit[counter] = counter;
 	}
 
-	#pragma omp for
+	#pragma omp for private (tour)
     for(int visitNumber = 0; visitNumber < numOfCoords - 1; visitNumber++){
         // min = 1000000;
 		int threadID = omp_get_thread_num();
@@ -110,6 +110,8 @@ int main(int argc, char *argv[]){
             if(nextPosition != 0){
                 // printf("Position %d Minimal Costs\n", nextPosition);
                 for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
+					#pragma omp critical
+					{
                     // printf("Minimal Cost from %d to %d to %d\n", tour[positionBefore], nextPosition, tour[positionBefore + 1]);
                     minimalCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
                     if(minimalCost < minimum[threadID]){
@@ -118,6 +120,7 @@ int main(int argc, char *argv[]){
                         indexA[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore]);
                         indexB[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore + 1]);
                     }
+					}
             }
             }
 
@@ -125,6 +128,8 @@ int main(int argc, char *argv[]){
         // printf("Minimal Position to visit is position %d with position %d before and position %d after\n", minimalPosition, indexA, indexB);
         // printf("Minimal Cost from %d to %d to %d\n", tour[indexA], minimalPosition, tour[indexB]);
         // printf("Store position to tour\n");
+		#pragma omp parallel
+		{
         if(visitNumber == 0){
             tour[visitNumber + 1] = minimumPosition[threadID];
         }
@@ -138,10 +143,11 @@ int main(int argc, char *argv[]){
         }
 
         toVisit[minimumPosition[threadID]] = 0;
-	    // printf("Visiting Order: ");
-	    // for(int i = 0; i < numOfCoords + 1; i++){
-		//     printf("%d ", tour[i]);
-	    // }
+	    printf("Visiting Order: ");
+	    for(int i = 0; i < numOfCoords + 1; i++){
+		    printf("%d ", tour[i]);
+	    }
+		}
     }
 	// printf("Visiting Order: ");
 	// for(int i = 0; i < numOfCoords + 1; i++){
