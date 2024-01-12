@@ -14,8 +14,8 @@
 
 /*If there are any issues with this code, please contact: h.j.forbes@liverpool.ac.uk*/
 
-// int readNumOfCoords(char *fileName);
-// double **readCoords(char *filename, int numOfCoords);
+int readNumOfCoords(char *fileName);
+double **readCoords(char *filename, int numOfCoords);
 
 /*Gets the number of the coordinates in the file. Returns as a single integer*/
 int readNumOfCoords(char *filename){
@@ -50,7 +50,7 @@ double **readCoords(char *filename, int numOfCoords){
 	double **coords = (double **)malloc(numOfCoords * sizeof(double *));
 
 	for(i = 0; i < numOfCoords; i++){
-		coords[i] = (double *) malloc(2 * sizeof(int));
+		coords[i] = (double *) malloc(2 * sizeof(double));
 		if (coords[i] == NULL){
 			perror("Memory Allocation Failed");
 		}

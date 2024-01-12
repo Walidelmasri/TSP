@@ -1,161 +1,213 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<math.h>
-#include<string.h>
-#include<stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+#include <stdbool.h>
 // #include "coordReader.c"
-#include<omp.h>
+#include <omp.h>
 
-int readNumOfCoords(char *fileName);
-double **readCoords(char *filename, int numOfCoords);
+// int readNumOfCoords(char *fileName);
+// double **readCoords(char *filename, int numOfCoords);
 void *writeTourToFile(int *tour, int tourLength, char *filename);
-int find_index(int arr[], int size, int element) {
-    for (int i = 0; i < size; i++) {
-        if (arr[i] == element) {
-            return i;
-        }
-    }
-    return -1; // element not found
-}
+// double cInsertionCost(int numOfCoords, double **distM, int startingPosition, int finalPrint, char *outputFile);
+// find the 'element' position in a array
+// int find_index(int arr[], int size, int element)
+// {
+//     for (int i = 0; i < size; i++)
+//     {
+//         if (arr[i] == element)
+//         {
+//             return i;
+//         }
+//     }
+//     return -1; // element not found
+// }
 
-int main(int argc, char *argv[]){
+double cInsertionCost(int numOfCoords, double *distM, int startingPosition, int finalPrint, char *outputFile)
+{
 
-    int numOfCoords;
-	int numThreads = omp_get_max_threads();
-    // char *filename = argv[1];
-    // char *outputFile = argv[2];
-
-    char *filename;
-    filename = "9_coords.coord";
-    char *outputFile;
-    outputFile = "testC9";
-
-	//Read number of coords in file
-    numOfCoords = readNumOfCoords(filename);
-    printf("Number of Coordinates: %d\n", numOfCoords);
-
-    // double distM[numOfCoords][numOfCoords];
-
-    //Always
-	//Always
-	//Always starting at position 0
-	int nextPosition = 0;
+    // // Read number of coords in file
+    // numOfCoords = readNumOfCoords(filename);
+    // printf("Number of Coordinates: %d\n", numOfCoords);
+    int numThreads = omp_get_max_threads();
+    // printf("Threads: %d\n", numThreads);
+    // variables for timing the code
+    // printf("still running");
+    double start, finish;
+    double totalCost = 0;
+    // global variable that is given as a private variable for threads for computation of cheapest
+    double minimalCost;
+    // global variables to store the position and the minimum cost to visit after the parallel computation
     int minimalPosition;
-    //Array to store steps taken during journey
-	int tour[numOfCoords + 1];
-    int tourSize;
-    int currentIndex;
-	//Array to keep track of the available options
-    int position = 0;
-	// double minimalCost;
-	double min = 0;
-	double totalCost = 0;
-	double singleCost = 0;
-    double left;
-    double right;
-    int lastPosition = 0;
+    double minCost;
+    // Array to store steps taken during journey
+    //  global variables to store the indicies the position will be stored in betwen
     int indexA;
     int indexB;
 
+    // Init variables
+    // array to keep track of visited verticies
+    int *toVisit = (int *)malloc(numOfCoords * sizeof(int));
+    // array to store steps taken during journey
+    int *tour = (int *)malloc((numOfCoords + 1) * sizeof(int));
+    // arrays dedicated for threads only
+    // initialized by setting their sizes to number of threads used
+    // array to store the position to go to (to be computed)
+    int *minimalThreadPosition = (int *)malloc(numThreads * sizeof(int));
+    // array to store indexA and indexB (to be computed)
+    int *indexThread = (int *)malloc(numThreads * sizeof(int));
+    int *indexThreadB = (int *)malloc(numThreads * sizeof(int));
+    // array to store minimal cost (to be computed)
+    double *minimalThreadCost = (double *)malloc(numThreads * sizeof(double));
+    double (*dM)[numOfCoords] = (double(*)[numOfCoords])distM;
 
-// Init variables
-	int *toVisit = (int *)malloc(numOfCoords * sizeof(int));
-	double *minimum = (double *)malloc(numThreads * sizeof(double));
-	double *minimumPosition = (double *)malloc(numThreads * sizeof(double));
-	// double *minimalCost = (double *)malloc(numThreads * sizeof(double));
-	int *indexA = (int *)malloc(numThreads * sizeof(int));
-	int *indexB = (int *)malloc(numThreads * sizeof(int));
 
-	double **coords = (double **)malloc(numOfCoords * sizeof(double *));
-	for(int i = 0; i < numOfCoords; i++){
-		coords[i] = (double *)malloc(numOfCoords * sizeof(double));
-	}
-	for(int i = 0; i < numOfCoords + 1; i++){
-		tour[i] = 0;
-	}
-    double **distM = (double **)malloc(numOfCoords * sizeof(double));
-    for(int j = 0; j < numOfCoords; j++){
-        distM[j] = (double *)malloc(numOfCoords * sizeof(double));
+    // filling up tour array with starting position at the beginning
+    for (int i = 0; i < numOfCoords + 1; i++)
+    {
+        tour[i] = startingPosition;
     }
 
-    // Get coords and store in array
-	coords = readCoords(filename, numOfCoords);
+    // start the timer right after the coords are loaded
+    start = omp_get_wtime();
 
-	//Calculate the distance matrix
-	#pragma omp for
-	for(int xx = 0; xx < numOfCoords; xx++){
-		for (int yy = 0; yy < numOfCoords; yy++){
-			distM[xx][yy] = sqrt(pow(coords[yy][0] - coords[xx][0], 2) + pow(coords[yy][1] - coords[xx][1], 2));
-		}
-	}
-	//Uncomment to print the distance matrix
-	printf("Distance Matrix\n");
-	for(int x = 0; x < numOfCoords; x++){
-		for(int y = 0; y < numOfCoords; y++){
-			printf("%f    ", distM[x][y]);
-		}
-		printf("\n");
-	}
-    for(int counter = 0; counter < numOfCoords; counter++){
-		toVisit[counter] = counter;
-	}
+// add all verticies to toVisit array at first as none of them are visited
+// assuming that the code always starts from position 0
+#pragma omp for
+    for (int counter = 0; counter < numOfCoords; counter++)
+    {
+        toVisit[counter] = counter;
+    }
 
-	// #pragma omp for private (tour)
-	#pragma omp parallel for
-    for(int visitNumber = 0; visitNumber < numOfCoords - 1; visitNumber++){
-        // min = 1000000;
-		int threadID = omp_get_thread_num();
-		minimum[threadID] = __DBL_MAX__;
-        printf("Here's Visit %d\n", visitNumber);
-        for(int nextCheck = 0; nextCheck < numOfCoords; nextCheck++){
-            nextPosition = toVisit[nextCheck];
-            if(nextPosition != 0){
-                // printf("Position %d Minimal Costs\n", nextPosition);
-                for(int positionBefore = 0; positionBefore < visitNumber + 1; positionBefore++){
-					// #pragma omp critical
-					// {
-                    // printf("Minimal Cost from %d to %d to %d\n", tour[positionBefore], nextPosition, tour[positionBefore + 1]);
-                    double minimalCost = distM[tour[positionBefore]][nextPosition] + distM[nextPosition][tour[positionBefore + 1]] - distM[tour[positionBefore]][tour[positionBefore + 1]];
-                    if(minimalCost < minimum[threadID]){
-                        minimumPosition[threadID] = nextPosition;
-                        minimum[threadID] = minimalCost;
-                        indexA[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore]);
-                        indexB[threadID] = find_index(tour, visitNumber + 2, tour[positionBefore + 1]);
+    toVisit[startingPosition] = -1;
+    // counter for the entire journey
+    int visitCount = 0;
+    // journey visits all of the coords except for position 0 as i start and end there
+    while (visitCount < numOfCoords - 1)
+    {
+        minCost = 1000000;
+        indexA = -1;
+        indexB = -1;
+// printf("Here's Visit %d\n", visitNumber);
+// parallelizing the calculation of the minimal distance
+#pragma omp parallel
+        {
+            // local variable to get thread number
+            int threadID = omp_get_thread_num();
+            // setting the minimum for each thread to a number that is higher than all of the distances
+            minimalThreadCost[threadID] = 100000000;
+// pragma omp for loop with collapse set at 2 to calculate the distances for all of the verticies
+// private minimalCost as each thread will calculate a minimalCost to compare to
+#pragma omp for collapse(2) private(minimalCost)
+            // loop over all of the verticies
+            for (int nextCheck = 0; nextCheck < numOfCoords; nextCheck++)
+            {
+            //     // loop to check the index the minimum position will be stored at
+                for (int i = 0; i < visitCount + 1; i++)
+                {
+            //         // nextPosition is a variable to store the next destination to check in the for loop
+                    int nextPosition = toVisit[nextCheck];
+            //         // if the position has not been sert to 0 (visited)
+                    if (nextPosition != -1)
+                    {
+                        minimalCost = dM[tour[i]][nextPosition] + dM[nextPosition][tour[(i + 1)]] - dM[tour[i]][tour[(i + 1)]];
+            //             // if the calculated minimal cost is less than the threads minimal cost
+            //             // store minimal cost, position to visit and indicies before and after in tour
+                        if (minimalCost < minimalThreadCost[threadID])
+                        {
+                            minimalThreadPosition[threadID] = nextPosition;
+                            minimalThreadCost[threadID] = minimalCost;
+                            // int indexTemp = find_index(tour, visitCount + 2, tour[i]);
+                            int indexTemp = i;
+                            indexThread[threadID] = indexTemp;
+                            indexThreadB[threadID] = i + 1;
+                        }
                     }
-					// }
+                }
             }
-            }
+// pragma omp single to find the minimum cost among all of the threads
+#pragma omp single
+            {
+//                 // loop over the number of threads
+                for (int j = 0; j < numThreads; j++)
+                {
+                    // debugging... thank you so much for the help :)
+                    // printf("Minimum Position from Thread %d is %d with cost %f\n", j, minimalPosition, minCost);
+                    if (minimalThreadCost[j] < minCost)
+                    {
+                        minCost = minimalThreadCost[j];
+                        minimalPosition = minimalThreadPosition[j];
+                        indexA = indexThread[j];
+                        indexB = indexThreadB[j];
+                    }
+                }
+                // at this stage the minimup position has been chosen and stored in global variables
+                // minimalPosition variable to add to tour will be used outside the parallel section to set as visited
+                // if it is the first visit store position as the first position to go to
+                // if(visitCount == 0){
+                //     tour[visitCount + 1] = minimalPosition;
+                // }
+                // else{
+                // if indexB is 0, it is definitely the index of the first 0 which is the starting point
+                // so it is changed to last position in tour + 1
+                if (indexB == 0)
+                {
+                    indexB = visitCount + 1;
+                }
+                // loop to shift all of the elements for insertion
+                for (int i = visitCount; i >= indexB; i--)
+                {
+                    int copy = tour[i];
+                    tour[(i + 1)] = copy;
+                }
+                // indexA is index of position before in tour, so add 1 to index and store position
+                tour[(indexA + 1)] = minimalPosition;
+                //     toVisit[minimalPosition] = 0;
 
-        }
-        // printf("Minimal Position to visit is position %d with position %d before and position %d after\n", minimalPosition, indexA, indexB);
-        // printf("Minimal Cost from %d to %d to %d\n", tour[indexA], minimalPosition, tour[indexB]);
-        // printf("Store position to tour\n");
-		#pragma omp single
-		{
-        if(visitNumber == 0){
-            tour[visitNumber + 1] = minimumPosition[threadID];
-        }
-        else{
-            if(indexB[threadID] == 0){indexB[threadID] = visitNumber + 2;}
-            for(int i = visitNumber; i >= indexB[threadID]; i--){
-                int temp = tour[i];
-                tour[i + 1] = temp;
+                // }
             }
-        tour[indexA[threadID] + 1] = minimalPosition;
+            // set the value of the position added to tour as 0 for if condition in the earlier loop
+            toVisit[minimalPosition] = -1;
         }
-		int temp = minimumPosition[threadID];
-        toVisit[temp] = 0;
-	    printf("Visiting Order: ");
-	    for(int i = 0; i < numOfCoords + 1; i++){
-		    printf("%d ", tour[i]);
-	    }
-		}
+        // debugging purposes
+        // printf("Visit Count: %d and Minimal Position: %d with Position %d before and Position %d after\n", visitCount, minimalPosition, indexA, indexB);
+        // increment visitCount counter for while loop
+        totalCost = totalCost + minCost;
+        visitCount++;
     }
-	// printf("Visiting Order: ");
-	// for(int i = 0; i < numOfCoords + 1; i++){
-	// 	printf("%d ", tour[i]);
-	// }
-    printf("\n");
-    writeTourToFile(tour, numOfCoords + 1, outputFile);
-    return 0;
+    // print out the visiting order, uncomment it out if it is needed
+    // printf("Visiting Order: ");
+    // for(int i = 0; i < numOfCoords + 1; i++){
+    //     printf("%d ", tour[i]);
+    // }
+
+    // end the timer
+    finish = omp_get_wtime();
+    if (finalPrint == 1)
+    {    
+        printf("Time taken using %d threads: %f seconds\n", numThreads, finish - start);
+        printf("Visiting Order: ");
+        for (int i = 0; i < numOfCoords + 1; i++)
+        {
+            printf("%d ", tour[i]);
+        }
+        writeTourToFile(tour, numOfCoords + 1, outputFile);
+
+    }
+    // writeTourToFile(tour, numOfCoords + 1, outputFile);
+    // free all memory allocated to the different thread arrays
+    // for (int i = 0; i < numOfCoords; i++)
+    // {
+    //     free(coords[i]);
+    //     free(distM[i]);
+    // }
+    // free(coords);
+    // free(distM);
+    // free(toVisit);
+    // free(tour);
+    // free(minimalThreadCost);
+    // free(minimalThreadPosition);
+    // free(indexThread);
+    // free(indexThreadB);
+    return totalCost;
 }
