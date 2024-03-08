@@ -1,9 +1,9 @@
 # TSP
 <h2>The Travelling Salesman Problem (TSP)<h2>
-<b>solving the problem using three algorithms:
-1. Closest Insertion
-2. Farthest Insertion
-3. Nearest Addition
+<b>Solving the problem using three algorithms:
+<br>1. Closest Insertion
+<br>2. Farthest Insertion
+<br>3. Nearest Addition
 
-All implementations are in c. 
+<br>All implementations are in c. <b>
 
